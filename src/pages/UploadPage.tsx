@@ -1,10 +1,11 @@
-import React, { useState, useRef, useCallback } from "react";
+import React, { useState, useRef, useCallback, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useLanguage } from "@/contexts/LanguageContext";
-import { Camera, Upload as UploadIcon, ImagePlus, Loader2, Lightbulb, X, CheckCircle } from "lucide-react";
+import { Camera, Upload as UploadIcon, ImagePlus, Loader2, Lightbulb, X, CheckCircle, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { mockDiagnosis, saveToHistory, DiagnosisResult } from "@/lib/mock-data";
+import { saveToHistory, DiagnosisResult } from "@/lib/mock-data";
+import { mlService, BackendPrediction } from "@/lib/ml-service";
 
 const UploadPage = () => {
   const { t, language } = useLanguage();
@@ -15,9 +16,19 @@ const UploadPage = () => {
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [preview, setPreview] = useState<string | null>(null);
   const [uploadProgress, setUploadProgress] = useState(0);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [apiError, setApiError] = useState<string | null>(null);
+  const [useBackend, setUseBackend] = useState(true);
+
+  useEffect(() => {
+    // Check if backend is available
+    mlService.checkHealth().then(setUseBackend);
+  }, []);
 
   const processFile = useCallback((file: File) => {
     if (!file.type.startsWith("image/")) return;
+    setSelectedFile(file);
+    setApiError(null);
     const reader = new FileReader();
     reader.onload = (e) => {
       setPreview(e.target?.result as string);
@@ -25,39 +36,58 @@ const UploadPage = () => {
     reader.readAsDataURL(file);
   }, []);
 
-  const handleAnalyze = useCallback(() => {
-    if (!preview) return;
+  const handleAnalyze = useCallback(async () => {
+    if (!selectedFile || !preview) return;
+    
     setIsAnalyzing(true);
     setUploadProgress(0);
+    setApiError(null);
 
-    // Simulate upload progress
-    const interval = setInterval(() => {
-      setUploadProgress((prev) => {
-        if (prev >= 90) {
-          clearInterval(interval);
-          return 90;
-        }
-        return prev + Math.random() * 30;
-      });
-    }, 300);
+    try {
+      // Simulate progress while uploading
+      const progressInterval = setInterval(() => {
+        setUploadProgress((prev) => {
+          if (prev >= 90) {
+            clearInterval(progressInterval);
+            return 90;
+          }
+          return prev + Math.random() * 20;
+        });
+      }, 200);
 
-    // Simulate API call - replace with actual Flask API call
-    setTimeout(() => {
+      // Call backend API
+      const prediction = await mlService.predictDisease(selectedFile);
+      clearInterval(progressInterval);
       setUploadProgress(100);
-      clearInterval(interval);
+
+      // Convert backend prediction to DiagnosisResult format
       const result: DiagnosisResult = {
-        ...mockDiagnosis,
         id: `diag-${Date.now()}`,
         imageUrl: preview,
         date: new Date().toISOString(),
+        disease: prediction.disease,
+        diseaseRw: prediction.diseaseRw,
+        confidence: prediction.confidence,
+        severity: prediction.severity,
+        affectedArea: prediction.affectedArea,
+        treatment: prediction.treatment,
       };
+
       saveToHistory(result);
+      
+      // Navigate to results page
       setTimeout(() => {
         setIsAnalyzing(false);
         navigate("/result", { state: { result } });
       }, 500);
-    }, 3000);
-  }, [preview, navigate]);
+    } catch (error) {
+      clearInterval(progressInterval);
+      setIsAnalyzing(false);
+      const errorMessage = error instanceof Error ? error.message : 'Analysis failed';
+      setApiError(errorMessage);
+      console.error('Analysis error:', error);
+    }
+  }, [selectedFile, preview, navigate]);
 
   const handleDrop = useCallback(
     (e: React.DragEvent) => {

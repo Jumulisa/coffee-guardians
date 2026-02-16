@@ -1,53 +1,258 @@
-# Welcome to Coffee Guardian
+# Coffee Guardian - AI Coffee Disease Detection
 
-## Project info
+**Coffee Guardian** is an AI-powered web application that uses deep learning (MobileNetV2) to detect and diagnose coffee leaf diseases in real-time. It helps coffee farmers identify diseases early and provides treatment recommendations.
 
-**URL**: REPLACE_WITH_DEPLOY_URL
+## Features
 
-## How can I edit this code?
+✨ **AI Disease Detection**
+- Real-time disease diagnosis with confidence scoring
+- Predicts: Healthy, Red Spider Mite, Rust
+- Severity classification and affected area estimation
 
-There are several ways of editing your application.
+🔐 **Authentication System**
+- User login/signup with mock authentication
+- Protected routes for premium features
+- Profile settings and security management
 
-**Use the online editor**
+📱 **Mobile-Friendly**
+- Responsive design works on desktop, tablet, and mobile
+- Image upload and camera capture support
+- Progressive improvement with offline support
 
-Use your deployment provider's online editor or your preferred IDE to make changes.
+🌍 **Multi-Language Support**
+- English
+- Kinyarwanda
 
-Changes made via an online editor may be reflected in this repository depending on your provider.
+✨ **Smooth Animations**
+- Fade-in, slide, and scale animations
+- Progress indicators and loading states
+- Beautiful UI with Tailwind CSS
 
-**Use your preferred IDE**
+🎨 **Built with Modern Stack**
+- React 18.3 with TypeScript
+- Vite 5.4 (lightning-fast bundler)
+- Tailwind CSS 3.4 for styling
+- shadcn/ui component library
+- TensorFlow.js compatible backend
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes may be reflected in the online editor depending on your provider.
+## Quick Start
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+### Prerequisites
 
-Follow these steps:
+- Node.js 18+ and npm
+- Python 3.9+ (for backend)
+- Trained model file: `coffee_disease_model.h5`
 
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
+### 1. Setup Frontend
 
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
+```bash
+# Clone the repository
+git clone https://github.com/YOUR_USERNAME/coffee-guardians.git
+cd coffee-guardians
 
-# Step 3: Install the necessary dependencies.
-npm i
+# Install dependencies
+npm install
 
-# Step 4: Start the development server with auto-reloading and an instant preview.
+# Copy example env
+cp .env.example .env
+
+# Edit .env to set backend URL (default: http://localhost:5000)
+```
+
+### 2. Setup Backend
+
+```bash
+# Install Python dependencies
+cd backend
+pip install -r requirements.txt
+
+# Ensure your model file exists
+ls -lh coffee_disease_model.h5
+```
+
+### 3. Run Both Services
+
+**Terminal 1 - Frontend (port 8084):**
+```bash
 npm run dev
 ```
 
-**Edit a file directly in GitHub**
+**Terminal 2 - Backend (port 5000):**
+```bash
+cd backend
+python app.py
+```
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+Visit **http://localhost:8084** in your browser.
 
-**Use GitHub Codespaces**
+### Demo Credentials
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
+- Email: `demo@example.com`
+- Password: `demo123`
+
+## Project Structure
+
+```
+coffee-guardians/
+├── src/                    # React frontend
+│   ├── pages/             # Page components
+│   │   ├── LoginPage.tsx
+│   │   ├── UploadPage.tsx
+│   │   ├── ResultPage.tsx
+│   │   ├── HistoryPage.tsx
+│   │   └── SettingsPage.tsx
+│   ├── components/        # Reusable components
+│   ├── contexts/          # React Context (Auth, Language)
+│   ├── lib/
+│   │   ├── ml-service.ts  # Backend API client
+│   │   └── mock-data.ts   # Mock diagnoses
+│   └── index.css          # Global styles + animations
+├── backend/               # Python Flask API
+│   ├── app.py            # Main Flask application
+│   ├── requirements.txt   # Python dependencies
+│   ├── coffee_disease_model.h5  # Trained ML model
+│   └── README.md         # Backend documentation
+├── public/               # Static assets
+├── package.json          # Frontend dependencies
+└── README.md            # This file
+```
+
+## Available Routes
+
+| Route | Auth Required | Description |
+|-------|---------------|-------------|
+| `/` | No | Homepage with features |
+| `/login` | No | User login |
+| `/signup` | No | New user registration |
+| `/forgot-password` | No | Password reset |
+| `/upload` | Yes | Upload image for diagnosis |
+| `/result` | Yes | View diagnosis results |
+| `/history` | Yes | View past diagnoses |
+| `/settings` | Yes | User profile & settings |
+
+## API Endpoints
+
+### Frontend communicates with Backend at `http://localhost:5000`
+
+- `POST /predict` - Submit image for disease diagnosis
+- `GET /info` - Get model information
+- `GET /health` - Health check
+
+See [backend/README.md](backend/README.md) for detailed API documentation.
+
+## Model Information
+
+- **Architecture**: MobileNetV2 + custom classification head
+- **Input**: 224×224×3 RGB images
+- **Classes**: 3 (Healthy, Red Spider Mite, Rust)
+- **Framework**: TensorFlow/Keras
+- **Size**: ~23 MB
+
+### Severity Levels
+
+- **Mild**: < 25% leaf area affected
+- **Moderate**: 25-50% leaf area affected
+- **Severe**: > 50% leaf area affected
+
+## Build & Deploy
+
+### Build for Production
+
+```bash
+npm run build
+```
+
+Generates optimized files in `dist/` directory.
+
+### Deploy Frontend
+
+- **Vercel**: `vercel`
+- **Netlify**: `netlify deploy --prod --dir=dist`
+- **GitHub Pages**: Configure in repository settings
+
+### Deploy Backend
+
+Use a production WSGI server:
+
+```bash
+pip install gunicorn
+gunicorn -w 4 -b 0.0.0.0:5000 app:app
+```
+
+Or containerize with Docker (see `backend/README.md`).
+
+## Technologies Used
+
+### Frontend
+- React 18.3
+- TypeScript 5.8
+- Vite 5.4
+- Tailwind CSS 3.4
+- shadcn/ui
+- lucide-react (icons)
+
+### Backend
+- Flask 2.3
+- TensorFlow 2.13
+- Keras
+- NumPy
+- Pillow
+
+### Deployment
+- GitHub (version control)
+- Vercel/Netlify (frontend)
+- Heroku/Railway (backend)
+
+## Development
+
+### Available Scripts
+
+```bash
+npm run dev        # Start dev server (frontend)
+npm run build      # Build for production
+npm run preview    # Preview production build
+npm run lint       # Run ESLint
+npm run test       # Run tests
+npm run test:watch # Run tests in watch mode
+```
+
+### Code Style
+
+- ESLint configured for React + TypeScript
+- Prettier for code formatting
+- TypeScript strict mode enabled
+
+## Contributing
+
+Contributions are welcome! Please:
+
+1. Fork the repository
+2. Create a feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit changes (`git commit -m 'Add amazing feature'`)
+4. Push to branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
+
+## License
+
+This project is open source. See LICENSE file for details.
+
+## Support
+
+- 📧 Email: support@coffeeguardian.local
+- 🐛 Issues: GitHub Issues
+- 💬 Discussions: GitHub Discussions
+
+## Acknowledgments
+
+- Coffee disease dataset: Robusta Coffee Leaf Images (RoCOLE)
+- shadcn/ui for excellent component library
+- TensorFlow team for ML framework
+
+---
+
+**Version**: 1.0.0  
+**Last Updated**: February 2026  
+**Status**: Production Ready ✅
 - Edit files directly within the Codespace and commit and push your changes once you're done.
 
 ## What technologies are used for this project?
