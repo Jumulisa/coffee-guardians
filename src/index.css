@@ -1,0 +1,223 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* #434534 Deep Forest Green → HSL(67, 12%, 23%) */
+    --primary: 67 12% 23%;
+    --primary-foreground: 0 0% 100%;
+
+    /* #959B96 Muted Sage → HSL(135, 3%, 60%) */
+    --secondary: 135 3% 60%;
+    --secondary-foreground: 67 12% 23%;
+
+    /* #E1E1E1 Neutral Background → HSL(0, 0%, 88%) */
+    --background: 0 0% 88%;
+    --foreground: 67 12% 15%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 67 12% 15%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 67 12% 15%;
+
+    --muted: 0 0% 92%;
+    --muted-foreground: 67 6% 40%;
+
+    --accent: 135 3% 60%;
+    --accent-foreground: 67 12% 23%;
+
+    --destructive: 0 60% 50%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 135 3% 78%;
+    --input: 135 3% 78%;
+    --ring: 67 12% 23%;
+
+    --radius: 0.625rem;
+
+    /* Severity colors */
+    --severity-mild: 135 30% 50%;
+    --severity-moderate: 40 80% 55%;
+    --severity-severe: 0 55% 50%;
+
+    --sidebar-background: 0 0% 98%;
+    --sidebar-foreground: 240 5.3% 26.1%;
+    --sidebar-primary: 67 12% 23%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 135 3% 90%;
+    --sidebar-accent-foreground: 67 12% 23%;
+    --sidebar-border: 135 3% 78%;
+    --sidebar-ring: 67 12% 23%;
+  }
+
+  .dark {
+    --primary: 67 12% 70%;
+    --primary-foreground: 67 12% 10%;
+
+    --secondary: 135 3% 35%;
+    --secondary-foreground: 0 0% 90%;
+
+    --background: 67 10% 8%;
+    --foreground: 0 0% 90%;
+
+    --card: 67 10% 12%;
+    --card-foreground: 0 0% 90%;
+
+    --popover: 67 10% 12%;
+    --popover-foreground: 0 0% 90%;
+
+    --muted: 67 6% 18%;
+    --muted-foreground: 67 6% 60%;
+
+    --accent: 135 3% 25%;
+    --accent-foreground: 0 0% 90%;
+
+    --destructive: 0 60% 40%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 67 6% 22%;
+    --input: 67 6% 22%;
+    --ring: 67 12% 70%;
+
+    --sidebar-background: 67 10% 10%;
+    --sidebar-foreground: 0 0% 90%;
+    --sidebar-primary: 67 12% 70%;
+    --sidebar-primary-foreground: 67 12% 10%;
+    --sidebar-accent: 67 6% 18%;
+    --sidebar-accent-foreground: 0 0% 90%;
+    --sidebar-border: 67 6% 22%;
+    --sidebar-ring: 67 12% 70%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground antialiased;
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  }
+}
+@layer utilities {
+  /* Animations */
+  @keyframes fadeIn {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+
+  @keyframes slideDown {
+    from {
+      opacity: 0;
+      transform: translateY(-10px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  @keyframes slideUp {
+    from {
+      opacity: 0;
+      transform: translateY(10px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  @keyframes slideLeft {
+    from {
+      opacity: 0;
+      transform: translateX(-10px);
+    }
+    to {
+      opacity: 1;
+      transform: translateX(0);
+    }
+  }
+
+  @keyframes slideRight {
+    from {
+      opacity: 0;
+      transform: translateX(10px);
+    }
+    to {
+      opacity: 1;
+      transform: translateX(0);
+    }
+  }
+
+  @keyframes scaleIn {
+    from {
+      opacity: 0;
+      transform: scale(0.95);
+    }
+    to {
+      opacity: 1;
+      transform: scale(1);
+    }
+  }
+
+  @keyframes shake {
+    0%, 100% {
+      transform: translateX(0);
+    }
+    25% {
+      transform: translateX(-5px);
+    }
+    75% {
+      transform: translateX(5px);
+    }
+  }
+
+  @keyframes pulse-subtle {
+    0%, 100% {
+      opacity: 1;
+    }
+    50% {
+      opacity: 0.8;
+    }
+  }
+
+  .animate-fade-in {
+    animation: fadeIn 0.5s ease-in-out;
+  }
+
+  .animate-slide-down {
+    animation: slideDown 0.4s ease-out;
+  }
+
+  .animate-slide-up {
+    animation: slideUp 0.4s ease-out;
+  }
+
+  .animate-slide-left {
+    animation: slideLeft 0.4s ease-out;
+  }
+
+  .animate-slide-right {
+    animation: slideRight 0.4s ease-out;
+  }
+
+  .animate-scale-in {
+    animation: scaleIn 0.3s ease-out;
+  }
+
+  .animate-shake {
+    animation: shake 0.5s ease-in-out;
+  }
+
+  .animate-pulse-subtle {
+    animation: pulse-subtle 2s ease-in-out infinite;
+  }
+}
