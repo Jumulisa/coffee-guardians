@@ -1,21 +1,24 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
+import { useLanguage } from "@/contexts/LanguageContext";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { User, Mail, Phone, MapPin, Lock, Bell, Shield } from "lucide-react";
+import { User, Mail, Lock, Bell, Shield, Languages, Loader2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { updateUserSettings } from "@/lib/db-service";
 
 const SettingsPage = () => {
-  const { user, logout } = useAuth();
+  const { user, logout, updateProfile } = useAuth();
+  const { language, setLanguage } = useLanguage();
   const navigate = useNavigate();
   const [isEditing, setIsEditing] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [successMessage, setSuccessMessage] = useState("");
   const [formData, setFormData] = useState({
-    name: user?.name || "",
+    full_name: user?.full_name || "",
     email: user?.email || "",
-    location: user?.location || "",
-    phone: user?.phone || "",
   });
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -23,14 +26,40 @@ const SettingsPage = () => {
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleSave = () => {
-    // TODO: Save to API
-    setIsEditing(false);
+  const handleSave = async () => {
+    try {
+      setIsSaving(true);
+      await updateProfile({
+        full_name: formData.full_name,
+      });
+      setSuccessMessage("Profile updated successfully!");
+      setIsEditing(false);
+      setTimeout(() => setSuccessMessage(""), 3000);
+    } catch (error) {
+      console.error("Error saving profile:", error);
+    } finally {
+      setIsSaving(false);
+    }
   };
 
-  const handleLogout = () => {
-    logout();
-    navigate("/login");
+  const handleLanguageChange = async (newLanguage: "en" | "rw") => {
+    try {
+      setLanguage(newLanguage);
+      if (user) {
+        await updateUserSettings(user.id, { language: newLanguage });
+      }
+    } catch (error) {
+      console.error("Error updating language preference:", error);
+    }
+  };
+
+  const handleLogout = async () => {
+    try {
+      await logout();
+      navigate("/login");
+    } catch (error) {
+      console.error("Error logging out:", error);
+    }
   };
 
   return (
@@ -52,20 +81,26 @@ const SettingsPage = () => {
           </CardHeader>
           <CardContent className="pt-6">
             <div className="space-y-4">
-              {/* Name */}
+              {/* Success Message */}
+              {successMessage && (
+                <div className="p-4 bg-green-50 border border-green-200 rounded-lg text-sm text-green-700">
+                  {successMessage}
+                </div>
+              )}
+
+              {/* Full Name */}
               <div className="space-y-2">
-                <Label htmlFor="name">Full Name</Label>
+                <Label htmlFor="full_name">Full Name</Label>
                 {isEditing ? (
                   <Input
-                    id="name"
-                    name="name"
-                    value={formData.name}
+                    id="full_name"
+                    name="full_name"
+                    value={formData.full_name}
                     onChange={handleChange}
-                    disabled={!isEditing}
                   />
                 ) : (
                   <div className="px-4 py-2 bg-gray-50 rounded-lg text-foreground font-medium">
-                    {formData.name}
+                    {formData.full_name || "Not set"}
                   </div>
                 )}
               </div>
@@ -82,48 +117,6 @@ const SettingsPage = () => {
                 <p className="text-xs text-muted-foreground">Email cannot be changed</p>
               </div>
 
-              {/* Location */}
-              <div className="space-y-2">
-                <Label htmlFor="location" className="flex items-center gap-2">
-                  <MapPin className="h-4 w-4" />
-                  District/Location
-                </Label>
-                {isEditing ? (
-                  <Input
-                    id="location"
-                    name="location"
-                    value={formData.location}
-                    onChange={handleChange}
-                    placeholder="e.g., Nyamagabe"
-                  />
-                ) : (
-                  <div className="px-4 py-2 bg-gray-50 rounded-lg text-foreground">
-                    {formData.location || "Not set"}
-                  </div>
-                )}
-              </div>
-
-              {/* Phone */}
-              <div className="space-y-2">
-                <Label htmlFor="phone" className="flex items-center gap-2">
-                  <Phone className="h-4 w-4" />
-                  Phone Number
-                </Label>
-                {isEditing ? (
-                  <Input
-                    id="phone"
-                    name="phone"
-                    value={formData.phone}
-                    onChange={handleChange}
-                    placeholder="+250 7XX XXX XXX"
-                  />
-                ) : (
-                  <div className="px-4 py-2 bg-gray-50 rounded-lg text-foreground">
-                    {formData.phone || "Not set"}
-                  </div>
-                )}
-              </div>
-
               {/* Buttons */}
               <div className="flex gap-3 pt-4">
                 {!isEditing ? (
@@ -135,12 +128,29 @@ const SettingsPage = () => {
                   </Button>
                 ) : (
                   <>
-                    <Button onClick={handleSave} className="flex-1">
-                      Save Changes
+                    <Button 
+                      onClick={handleSave} 
+                      className="flex-1"
+                      disabled={isSaving}
+                    >
+                      {isSaving ? (
+                        <>
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          Saving...
+                        </>
+                      ) : (
+                        "Save Changes"
+                      )}
                     </Button>
                     <Button
                       variant="outline"
-                      onClick={() => setIsEditing(false)}
+                      onClick={() => {
+                        setIsEditing(false);
+                        setFormData({
+                          full_name: user?.full_name || "",
+                          email: user?.email || "",
+                        });
+                      }}
                     >
                       Cancel
                     </Button>
@@ -204,6 +214,41 @@ const SettingsPage = () => {
             <label className="flex items-center gap-3 p-3 hover:bg-gray-50 rounded-lg cursor-pointer transition-colors">
               <input type="checkbox" className="w-4 h-4" />
               <span className="text-sm font-medium text-foreground">Product recommendations</span>
+            </label>
+          </CardContent>
+        </Card>
+
+        {/* Language Section */}
+        <Card className="mb-6 border-0 shadow-lg animate-slide-up" style={{ animationDelay: "0.25s" }}>
+          <CardHeader className="border-b">
+            <CardTitle className="flex items-center gap-2">
+              <Languages className="h-5 w-5 text-primary" />
+              Language
+            </CardTitle>
+            <CardDescription>Choose your preferred language</CardDescription>
+          </CardHeader>
+          <CardContent className="pt-6 space-y-3">
+            <label className="flex items-center gap-3 p-3 hover:bg-gray-50 rounded-lg cursor-pointer transition-colors">
+              <input 
+                type="radio" 
+                name="language"
+                value="en"
+                checked={language === "en"}
+                onChange={(e) => handleLanguageChange(e.target.value as "en" | "rw")}
+                className="w-4 h-4"
+              />
+              <span className="text-sm font-medium text-foreground">English</span>
+            </label>
+            <label className="flex items-center gap-3 p-3 hover:bg-gray-50 rounded-lg cursor-pointer transition-colors">
+              <input 
+                type="radio" 
+                name="language"
+                value="rw"
+                checked={language === "rw"}
+                onChange={(e) => handleLanguageChange(e.target.value as "en" | "rw")}
+                className="w-4 h-4"
+              />
+              <span className="text-sm font-medium text-foreground">Kinyarwanda (Icyarwanda)</span>
             </label>
           </CardContent>
         </Card>

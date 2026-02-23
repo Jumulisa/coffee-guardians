@@ -1,17 +1,20 @@
 import React, { useState, useRef, useCallback, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "@/contexts/AuthContext";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { Camera, Upload as UploadIcon, ImagePlus, Loader2, Lightbulb, X, CheckCircle, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { saveToHistory, DiagnosisResult } from "@/lib/mock-data";
 import { mlService, BackendPrediction } from "@/lib/ml-service";
+import { saveDiagnosis } from "@/lib/db-service";
 
 const UploadPage = () => {
   const { t, language } = useLanguage();
+  const { user, isLoading: authLoading } = useAuth();
   const navigate = useNavigate();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const cameraInputRef = useRef<HTMLInputElement>(null);
+
   const [isDragging, setIsDragging] = useState(false);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [preview, setPreview] = useState<string | null>(null);
@@ -19,11 +22,18 @@ const UploadPage = () => {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [apiError, setApiError] = useState<string | null>(null);
   const [useBackend, setUseBackend] = useState(true);
+  const [prediction, setPrediction] = useState<BackendPrediction | null>(null);
+  let progressInterval: ReturnType<typeof setInterval>;
 
-  useEffect(() => {
-    // Check if backend is available
-    mlService.checkHealth().then(setUseBackend);
-  }, []);
+
+  // Removed backend health check (not supported by Colab proxy)
+
+  // Presentation mode: do not redirect to login
+  // useEffect(() => {
+  //   if (!authLoading && !user) {
+  //     navigate("/login");
+  //   }
+  // }, [user, authLoading, navigate]);
 
   const processFile = useCallback((file: File) => {
     if (!file.type.startsWith("image/")) return;
@@ -38,14 +48,16 @@ const UploadPage = () => {
 
   const handleAnalyze = useCallback(async () => {
     if (!selectedFile || !preview) return;
-    
+    // Presentation mode: use fallback user id if not authenticated
+    const userId = user?.id || "demo-user";
     setIsAnalyzing(true);
     setUploadProgress(0);
     setApiError(null);
+    setPrediction(null);
 
     try {
       // Simulate progress while uploading
-      const progressInterval = setInterval(() => {
+      progressInterval = setInterval(() => {
         setUploadProgress((prev) => {
           if (prev >= 90) {
             clearInterval(progressInterval);
@@ -56,38 +68,51 @@ const UploadPage = () => {
       }, 200);
 
       // Call backend API
-      const prediction = await mlService.predictDisease(selectedFile);
+      const pred = await mlService.predictDisease(selectedFile);
       clearInterval(progressInterval);
       setUploadProgress(100);
+      setPrediction(pred);
 
-      // Convert backend prediction to DiagnosisResult format
-      const result: DiagnosisResult = {
-        id: `diag-${Date.now()}`,
-        imageUrl: preview,
-        date: new Date().toISOString(),
-        disease: prediction.disease,
-        diseaseRw: prediction.diseaseRw,
-        confidence: prediction.confidence,
-        severity: prediction.severity,
-        affectedArea: prediction.affectedArea,
-        treatment: prediction.treatment,
-      };
+      // Save diagnosis to Supabase database
+      const diagnosisRecord = await saveDiagnosis(userId, {
+        image_url: preview, // Store base64 data URL (consider using Supabase Storage for large files)
+        disease_name: pred.disease,
+        confidence: pred.confidence,
+        severity: pred.severity,
+        affected_area: pred.affectedArea,
+        treatment_action: pred.treatment.action,
+        treatment_duration: undefined,
+        estimated_cost: pred.treatment.cost || undefined,
+      });
 
-      saveToHistory(result);
-      
-      // Navigate to results page
+      // Show prediction for 2 seconds, then navigate
       setTimeout(() => {
         setIsAnalyzing(false);
-        navigate("/result", { state: { result } });
-      }, 500);
+        navigate("/result", { 
+          state: { 
+            result: {
+              id: diagnosisRecord.id,
+              imageUrl: preview,
+              date: diagnosisRecord.created_at,
+              disease: pred.disease,
+              diseaseRw: pred.diseaseRw,
+              confidence: pred.confidence,
+              severity: pred.severity,
+              affectedArea: pred.affectedArea,
+              treatment: pred.treatment,
+            }
+          } 
+        });
+      }, 2000);
     } catch (error) {
       clearInterval(progressInterval);
       setIsAnalyzing(false);
+      setPrediction(null);
       const errorMessage = error instanceof Error ? error.message : 'Analysis failed';
       setApiError(errorMessage);
       console.error('Analysis error:', error);
     }
-  }, [selectedFile, preview, navigate]);
+  }, [selectedFile, preview, navigate, user]);
 
   const handleDrop = useCallback(
     (e: React.DragEvent) => {
@@ -247,8 +272,9 @@ const UploadPage = () => {
           </Button>
         </div>
 
+
         {/* Analyze Button */}
-        {preview && (
+        {preview && !isAnalyzing && (
           <Button
             size="lg"
             className="w-full py-6 text-base font-semibold shadow-lg hover:shadow-xl transition-all duration-300 animate-slide-up mb-8"
@@ -257,6 +283,36 @@ const UploadPage = () => {
             <CheckCircle className="mr-2 h-5 w-5" />
             {t("step2Title")}
           </Button>
+        )}
+
+        {/* Prediction Summary */}
+        {prediction && !isAnalyzing && (
+          <div className="mb-8 p-6 rounded-lg border border-primary/30 bg-primary/5 animate-fade-in">
+            <h2 className="text-xl font-bold mb-2 text-primary">Prediction Summary</h2>
+            <div className="mb-2">
+              <span className="font-semibold">Disease:</span> {language === "rw" ? prediction.diseaseRw : prediction.disease}
+            </div>
+            <div className="mb-2">
+              <span className="font-semibold">Confidence:</span> {(prediction.confidence * 100).toFixed(1)}%
+            </div>
+            <div className="mb-2">
+              <span className="font-semibold">Severity:</span> {prediction.severity}
+            </div>
+            <div className="mb-2">
+              <span className="font-semibold">Recommendation:</span> {language === "rw" ? prediction.treatment.actionRw : prediction.treatment.action}
+            </div>
+            <div className="mb-2">
+              <span className="font-semibold">Estimated Cost:</span> {prediction.treatment.cost}
+            </div>
+            <div className="mb-2">
+              <span className="font-semibold">Other Possible Diseases:</span>
+              <ul className="list-disc ml-6">
+                {prediction.allPredictions && Object.entries(prediction.allPredictions).map(([disease, conf]) => (
+                  <li key={disease}>{disease}: {(conf * 100).toFixed(1)}%</li>
+                ))}
+              </ul>
+            </div>
+          </div>
         )}
 
         {/* Tips */}

@@ -1,11 +1,23 @@
 import { Link } from "react-router-dom";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { useAuth } from "@/contexts/AuthContext";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { getStoredHistory, clearHistory, DiagnosisResult } from "@/lib/mock-data";
-import { Camera, Trash2, Leaf, ArrowRight, Calendar, AlertCircle } from "lucide-react";
-import { useState } from "react";
+import { getDiagnosisHistory, deleteDiagnosis } from "@/lib/db-service";
+import { Camera, Trash2, Leaf, ArrowRight, Calendar, AlertCircle, Loader2 } from "lucide-react";
+import { useState, useEffect } from "react";
+
+interface DiagnosisRecord {
+  id: string;
+  image_url: string;
+  disease_name: string;
+  confidence: number;
+  severity: string;
+  affected_area: number;
+  treatment_action: string;
+  created_at: string;
+}
 
 const severityColors = {
   mild: "bg-green-500 text-white",
@@ -21,13 +33,37 @@ const severityEmoji = {
 
 const HistoryPage = () => {
   const { t, language } = useLanguage();
-  const [history, setHistory] = useState<DiagnosisResult[]>(getStoredHistory);
-  const [deleteConfirm, setDeleteConfirm] = useState(false);
+  const { user } = useAuth();
+  const [history, setHistory] = useState<DiagnosisRecord[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
 
-  const handleClear = () => {
-    clearHistory();
-    setHistory([]);
-    setDeleteConfirm(false);
+  // Load diagnosis history from Supabase
+  useEffect(() => {
+    const loadHistory = async () => {
+      // Presentation mode: use a fallback user id if not authenticated
+      const userId = user?.id || "demo-user";
+      try {
+        const data = await getDiagnosisHistory(userId);
+        setHistory(data || []);
+      } catch (error) {
+        console.error('Error loading diagnosis history:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    loadHistory();
+  }, [user]);
+
+  const handleDelete = async (diagnosisId: string) => {
+    try {
+      await deleteDiagnosis(diagnosisId);
+      setHistory(history.filter(h => h.id !== diagnosisId));
+      setDeleteConfirm(null);
+    } catch (error) {
+      console.error('Error deleting diagnosis:', error);
+    }
   };
 
   const stats = {
@@ -59,17 +95,21 @@ const HistoryPage = () => {
           )}
         </div>
 
-        {/* Delete Confirmation */}
+      {/* Delete Confirmation */}
         {deleteConfirm && (
           <Card className="mb-6 border-destructive/50 bg-destructive/5 animate-shake">
             <CardContent className="pt-6 space-y-4">
-              <p className="font-semibold text-foreground">Are you sure? This action cannot be undone.</p>
+              <p className="font-semibold text-foreground">Delete this diagnosis record? This action cannot be undone.</p>
               <div className="flex gap-3">
-                <Button onClick={handleClear} variant="destructive" className="flex-1">
-                  Delete All
+                <Button 
+                  onClick={() => handleDelete(deleteConfirm)} 
+                  variant="destructive" 
+                  className="flex-1"
+                >
+                  Delete
                 </Button>
                 <Button
-                  onClick={() => setDeleteConfirm(false)}
+                  onClick={() => setDeleteConfirm(null)}
                   variant="outline"
                   className="flex-1"
                 >
@@ -78,6 +118,16 @@ const HistoryPage = () => {
               </div>
             </CardContent>
           </Card>
+        )}
+
+        {/* Loading State */}
+        {isLoading && (
+          <div className="flex justify-center items-center py-24">
+            <div className="space-y-4 text-center">
+              <Loader2 className="h-12 w-12 animate-spin text-primary mx-auto" />
+              <p className="text-muted-foreground">Loading diagnosis history...</p>
+            </div>
+          </div>
         )}
 
         {/* Stats Cards */}
@@ -122,85 +172,112 @@ const HistoryPage = () => {
             {/* History List */}
             <div className="space-y-3 animate-slide-up">
               {history.map((item, index) => (
-                <Link
+                <div
                   key={item.id}
-                  to="/result"
-                  state={{ result: item }}
                   style={{ animationDelay: `${index * 0.05}s` }}
                   className="block animate-slide-up"
                 >
-                  <Card className="hover:shadow-lg hover:border-primary/50 transition-all duration-300 hover:-translate-y-1 cursor-pointer overflow-hidden group">
-                    <CardContent className="p-0 flex items-center">
-                      {/* Image */}
-                      {item.imageUrl && (
-                        <div className="relative h-20 w-20 shrink-0 overflow-hidden bg-gray-100">
-                          <img
-                            src={item.imageUrl}
-                            alt="Diagnosis"
-                            className="h-full w-full object-cover group-hover:scale-110 transition-transform duration-300"
-                          />
-                        </div>
-                      )}
-
-                      {/* Content */}
-                      <div className="flex-1 p-4">
-                        <div className="flex items-center justify-between gap-4">
-                          <div className="min-w-0 flex-1">
-                            <h3 className="font-bold text-foreground truncate group-hover:text-primary transition-colors">
-                              {language === "rw" ? item.diseaseRw : item.disease}
-                            </h3>
-                            <div className="flex items-center gap-2 mt-1 text-xs text-muted-foreground">
-                              <Calendar className="h-3 w-3" />
-                              {new Date(item.date).toLocaleDateString(language === "rw" ? "rw-RW" : "en-US", {
-                                year: "numeric",
-                                month: "short",
-                                day: "numeric",
-                              })}{" "}
-                              •{" "}
-                              {new Date(item.date).toLocaleTimeString(language === "rw" ? "rw-RW" : "en-US", {
-                                hour: "2-digit",
-                                minute: "2-digit",
-                              })}
-                            </div>
-                          </div>
-
-                          {/* Severity Badge */}
-                          <div className="flex flex-col items-end gap-2 shrink-0">
-                            <Badge className={`${severityColors[item.severity]}`}>
-                              {severityEmoji[item.severity]} {t(item.severity as any)}
-                            </Badge>
-                            <span className="text-xs font-medium text-muted-foreground">
-                              {Math.round(item.confidence * 100)}% confidence
-                            </span>
-                          </div>
-
-                          {/* Arrow */}
-                          <ArrowRight className="h-5 w-5 text-muted-foreground group-hover:text-primary transition-colors ml-2" />
-                        </div>
-
-                        {/* Affected Area Progress */}
-                        <div className="mt-3 space-y-1">
-                          <div className="flex items-center justify-between text-xs">
-                            <span className="text-muted-foreground">Affected area</span>
-                            <span className="font-semibold text-foreground">{item.affectedArea}%</span>
-                          </div>
-                          <div className="h-1 bg-gray-200 rounded-full overflow-hidden">
-                            <div
-                              className={`h-full transition-all duration-300 ${
-                                item.severity === "mild"
-                                  ? "bg-green-500"
-                                  : item.severity === "moderate"
-                                  ? "bg-yellow-500"
-                                  : "bg-red-500"
-                              }`}
-                              style={{ width: `${item.affectedArea}%` }}
+                  <Link
+                    to="/result"
+                    state={{ 
+                      result: {
+                        id: item.id,
+                        imageUrl: item.image_url,
+                        date: item.created_at,
+                        disease: item.disease_name,
+                        diseaseRw: item.disease_name, // TODO: fetch from diseases table
+                        confidence: item.confidence,
+                        severity: item.severity,
+                        affectedArea: item.affected_area,
+                        treatment: item.treatment_action,
+                      }
+                    }}
+                    className="block"
+                  >
+                    <Card className="hover:shadow-lg hover:border-primary/50 transition-all duration-300 hover:-translate-y-1 cursor-pointer overflow-hidden group">
+                      <CardContent className="p-0 flex items-center">
+                        {/* Image */}
+                        {item.image_url && (
+                          <div className="relative h-20 w-20 shrink-0 overflow-hidden bg-gray-100">
+                            <img
+                              src={item.image_url}
+                              alt="Diagnosis"
+                              className="h-full w-full object-cover group-hover:scale-110 transition-transform duration-300"
                             />
                           </div>
+                        )}
+
+                        {/* Content */}
+                        <div className="flex-1 p-4">
+                          <div className="flex items-center justify-between gap-4">
+                            <div className="min-w-0 flex-1">
+                              <h3 className="font-bold text-foreground truncate group-hover:text-primary transition-colors">
+                                {item.disease_name}
+                              </h3>
+                              <div className="flex items-center gap-2 mt-1 text-xs text-muted-foreground">
+                                <Calendar className="h-3 w-3" />
+                                {new Date(item.created_at).toLocaleDateString(language === "rw" ? "rw-RW" : "en-US", {
+                                  year: "numeric",
+                                  month: "short",
+                                  day: "numeric",
+                                })}{" "}
+                                •{" "}
+                                {new Date(item.created_at).toLocaleTimeString(language === "rw" ? "rw-RW" : "en-US", {
+                                  hour: "2-digit",
+                                  minute: "2-digit",
+                                })}
+                              </div>
+                            </div>
+
+                            {/* Severity Badge */}
+                            <div className="flex flex-col items-end gap-2 shrink-0">
+                              <Badge className={`${severityColors[item.severity as keyof typeof severityColors]}`}>
+                                {severityEmoji[item.severity as keyof typeof severityEmoji]} {t(item.severity as any)}
+                              </Badge>
+                              <span className="text-xs font-medium text-muted-foreground">
+                                {Math.round(item.confidence)}% confidence
+                              </span>
+                            </div>
+
+                            {/* Arrow */}
+                            <ArrowRight className="h-5 w-5 text-muted-foreground group-hover:text-primary transition-colors ml-2" />
+                          </div>
+
+                          {/* Affected Area Progress */}
+                          <div className="mt-3 space-y-1">
+                            <div className="flex items-center justify-between text-xs">
+                              <span className="text-muted-foreground">Affected area</span>
+                              <span className="font-semibold text-foreground">{item.affected_area}%</span>
+                            </div>
+                            <div className="h-1 bg-gray-200 rounded-full overflow-hidden">
+                              <div
+                                className={`h-full transition-all duration-300 ${
+                                  item.severity === "mild"
+                                    ? "bg-green-500"
+                                    : item.severity === "moderate"
+                                    ? "bg-yellow-500"
+                                    : "bg-red-500"
+                                }`}
+                                style={{ width: `${item.affected_area}%` }}
+                              />
+                            </div>
+                          </div>
                         </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                </Link>
+                      </CardContent>
+                    </Card>
+                  </Link>
+                  {/* Delete Button */}
+                  <button
+                    onClick={(e) => {
+                      e.preventDefault();
+                      setDeleteConfirm(item.id);
+                    }}
+                    className="mt-1 text-xs text-destructive hover:text-destructive/80 transition-colors"
+                  >
+                    <Trash2 className="h-3 w-3 inline mr-1" />
+                    Delete
+                  </button>
+                </div>
               ))}
             </div>
 

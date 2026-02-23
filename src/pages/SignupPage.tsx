@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { useGlobalError } from "@/hooks/use-global-error";
 import { useNavigate, Link } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { Coffee, User, Mail, Phone, MapPin, Lock, AlertCircle, Loader2, Eye, EyeOff, CheckCircle } from "lucide-react";
@@ -22,6 +23,7 @@ const SignupPage = () => {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
+  const { showError } = useGlobalError();
   const [passwordStrength, setPasswordStrength] = useState(0);
 
   const checkPasswordStrength = (pwd: string) => {
@@ -65,10 +67,12 @@ const SignupPage = () => {
 
     setIsLoading(true);
     try {
-      await signup(formData.name, formData.email, formData.password, formData.location, formData.phone);
-      navigate("/");
+      await signup(formData.name, formData.email, formData.password);
+      // Navigate to login with success state
+      navigate("/login", { state: { signupSuccess: true, email: formData.email } });
     } catch (err) {
       setError(err instanceof Error ? err.message : "Signup failed. Please try again.");
+      showError(err);
     } finally {
       setIsLoading(false);
     }

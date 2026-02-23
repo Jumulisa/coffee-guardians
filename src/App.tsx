@@ -6,7 +6,8 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { LanguageProvider } from "@/contexts/LanguageContext";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import Navbar from "@/components/Navbar";
-import ProtectedRoute from "@/components/ProtectedRoute";
+import { GlobalErrorBanner } from "@/components/GlobalErrorBanner";
+// import ProtectedRoute from "@/components/ProtectedRoute";
 
 // Auth Pages
 import LoginPage from "./pages/LoginPage";
@@ -45,46 +46,11 @@ const AppRoutes = () => {
         />
 
         {/* Protected Routes */}
-        <Route
-          path="/"
-          element={
-            <ProtectedRoute>
-              <Index />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/upload"
-          element={
-            <ProtectedRoute>
-              <UploadPage />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/result"
-          element={
-            <ProtectedRoute>
-              <ResultPage />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/history"
-          element={
-            <ProtectedRoute>
-              <HistoryPage />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/settings"
-          element={
-            <ProtectedRoute>
-              <SettingsPage />
-            </ProtectedRoute>
-          }
-        />
+        <Route path="/" element={<Index />} />
+        <Route path="/upload" element={<UploadPage />} />
+        <Route path="/result" element={<ResultPage />} />
+        <Route path="/history" element={<HistoryPage />} />
+        <Route path="/settings" element={<SettingsPage />} />
 
         {/* 404 */}
         <Route path="*" element={<NotFound />} />
@@ -100,6 +66,7 @@ const App = () => (
         <LanguageProvider>
           <Toaster />
           <Sonner />
+          <GlobalErrorBanner />
           <BrowserRouter>
             <AppRoutes />
           </BrowserRouter>

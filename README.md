@@ -10,7 +10,8 @@
 - Severity classification and affected area estimation
 
 🔐 **Authentication System**
-- User login/signup with mock authentication
+- Supabase authentication with email/password
+- Secure user profiles and session management
 - Protected routes for premium features
 - Profile settings and security management
 
@@ -27,6 +28,12 @@
 - Fade-in, slide, and scale animations
 - Progress indicators and loading states
 - Beautiful UI with Tailwind CSS
+
+💾 **Database & Storage**
+- Supabase PostgreSQL database
+- User profiles and diagnosis history
+- User preferences and settings
+- Reference disease information
 
 🎨 **Built with Modern Stack**
 - React 18.3 with TypeScript
@@ -59,7 +66,37 @@ cp .env.example .env
 # Edit .env to set backend URL (default: http://localhost:5000)
 ```
 
-### 2. Setup Backend
+### 2. Setup Supabase (Database & Authentication)
+
+Coffee Guardian uses **Supabase** for authentication and data storage.
+
+#### Quick Setup:
+
+1. **Create Supabase Project**
+   - Go to [https://supabase.com](https://supabase.com)
+   - Click "New Project"
+   - Fill in project details and wait for initialization (2-3 minutes)
+
+2. **Get Your Credentials**
+   - Go to **Settings → API**
+   - Copy **Project URL** and **Anon Key**
+
+3. **Configure Frontend**
+   - Create `.env` file in project root:
+   ```env
+   VITE_API_URL=http://localhost:5000
+   VITE_SUPABASE_URL=https://your-project.supabase.co
+   VITE_SUPABASE_ANON_KEY=your-anon-key-here
+   ```
+
+4. **Create Database Tables**
+   - In Supabase, go to **SQL Editor**
+   - Create new query and paste the SQL from [backend/supabase-schema.sql](backend/supabase-schema.sql)
+   - Run the query
+
+For complete setup instructions, see [SUPABASE_SETUP.md](SUPABASE_SETUP.md).
+
+### 3. Setup Backend
 
 ```bash
 # Install Python dependencies
@@ -70,7 +107,7 @@ pip install -r requirements.txt
 ls -lh coffee_disease_model.h5
 ```
 
-### 3. Run Both Services
+### 4. Run Both Services
 
 **Terminal 1 - Frontend (port 8084):**
 ```bash
@@ -83,12 +120,24 @@ cd backend
 python app.py
 ```
 
-Visit **http://localhost:8084** in your browser.
+Visit **http://localhost:8085** in your browser.
 
-### Demo Credentials
+### First Time Setup
 
-- Email: `demo@example.com`
-- Password: `demo123`
+1. **Create Your Account**
+   - Click "Sign Up" on the login page
+   - Enter your email and create a password
+   - Verify your email (check spam if needed)
+
+2. **Upload & Analyze**
+   - Go to "Upload" page
+   - Take a photo or upload an image of a coffee leaf
+   - AI will analyze and provide diagnosis
+
+3. **View Results**
+   - See disease diagnosis with confidence score
+   - Get treatment recommendations
+   - Save to history automatically
 
 ## Project Structure
 

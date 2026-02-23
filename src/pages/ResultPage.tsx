@@ -20,15 +20,19 @@ const ResultPage = () => {
   const navigate = useNavigate();
   const [showAlt, setShowAlt] = useState(false);
 
+
   const result = (location.state as { result?: DiagnosisResult })?.result;
 
-  if (!result) {
+  // Fallback: show error if result is missing or missing key fields
+  const missingFields = !result || !result.disease || !result.confidence || !result.severity || !result.treatment;
+  if (missingFields) {
     return (
       <main className="flex min-h-[calc(100vh-64px)] items-center justify-center px-4">
         <div className="text-center animate-fade-in">
-          <p className="mb-4 text-muted-foreground">No diagnosis data found.</p>
+          <p className="mb-4 text-destructive font-semibold">No valid diagnosis data received from the model API.</p>
+          <p className="mb-4 text-muted-foreground">Please try again, check your network, or contact support if the problem persists.</p>
           <Link to="/upload">
-            <Button>{t("ctaButton")}</Button>
+            <Button>Try Again</Button>
           </Link>
         </div>
       </main>

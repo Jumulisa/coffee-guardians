@@ -37,30 +37,33 @@ const Navbar = () => {
 
           {/* Desktop Navigation */}
           <div className="hidden md:flex items-center gap-8">
-            {isAuthenticated && (
-              <>
-                <Link
-                  to="/"
-                  className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors"
-                >
-                  <Home className="h-4 w-4" />
-                  <span>{t("home")}</span>
-                </Link>
-                <Link
-                  to="/upload"
-                  className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors"
-                >
-                  <span>{t("upload")}</span>
-                </Link>
-                <Link
-                  to="/history"
-                  className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors"
-                >
-                  <History className="h-4 w-4" />
-                  <span>{t("history")}</span>
-                </Link>
-              </>
-            )}
+            <Link
+              to="/"
+              className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors"
+            >
+              <Home className="h-4 w-4" />
+              <span>{t("home")}</span>
+            </Link>
+            <Link
+              to="/upload"
+              className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors"
+            >
+              <span>{t("upload")}</span>
+            </Link>
+            <Link
+              to="/history"
+              className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors"
+            >
+              <History className="h-4 w-4" />
+              <span>{t("history")}</span>
+            </Link>
+            <Link
+              to="/settings"
+              className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors"
+            >
+              <Settings className="h-4 w-4" />
+              <span>Settings</span>
+            </Link>
           </div>
 
           {/* Auth Section */}
@@ -149,53 +152,30 @@ const Navbar = () => {
         {/* Mobile Navigation */}
         {mobileMenuOpen && (
           <div className="md:hidden pb-4 space-y-2 animate-slide-down">
-            {isAuthenticated ? (
-              <>
-                <Link
-                  to="/"
-                  className="block px-4 py-2 rounded-lg hover:bg-gray-100 text-sm font-medium transition-colors"
-                >
-                  {t("home")}
-                </Link>
-                <Link
-                  to="/upload"
-                  className="block px-4 py-2 rounded-lg hover:bg-gray-100 text-sm font-medium transition-colors"
-                >
-                  {t("upload")}
-                </Link>
-                <Link
-                  to="/history"
-                  className="block px-4 py-2 rounded-lg hover:bg-gray-100 text-sm font-medium transition-colors"
-                >
-                  {t("history")}
-                </Link>
-                <Link
-                  to="/settings"
-                  className="block px-4 py-2 rounded-lg hover:bg-gray-100 text-sm font-medium transition-colors"
-                >
-                  Settings
-                </Link>
-                <button
-                  onClick={handleLogout}
-                  className="w-full text-left px-4 py-2 rounded-lg hover:bg-gray-100 text-sm font-medium text-destructive transition-colors"
-                >
-                  {t("logout") || "Logout"}
-                </button>
-              </>
-            ) : (
-              <>
-                <Button
-                  variant="ghost"
-                  onClick={() => navigate("/login")}
-                  className="w-full justify-center"
-                >
-                  {t("signIn") || "Sign in"}
-                </Button>
-                <Button onClick={() => navigate("/signup")} className="w-full">
-                  {t("signUp") || "Sign up"}
-                </Button>
-              </>
-            )}
+            <Link
+              to="/"
+              className="block px-4 py-2 rounded-lg hover:bg-gray-100 text-sm font-medium transition-colors"
+            >
+              {t("home")}
+            </Link>
+            <Link
+              to="/upload"
+              className="block px-4 py-2 rounded-lg hover:bg-gray-100 text-sm font-medium transition-colors"
+            >
+              {t("upload")}
+            </Link>
+            <Link
+              to="/history"
+              className="block px-4 py-2 rounded-lg hover:bg-gray-100 text-sm font-medium transition-colors"
+            >
+              {t("history")}
+            </Link>
+            <Link
+              to="/settings"
+              className="block px-4 py-2 rounded-lg hover:bg-gray-100 text-sm font-medium transition-colors"
+            >
+              Settings
+            </Link>
           </div>
         )}
       </div>

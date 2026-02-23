@@ -1,7 +1,8 @@
-import React, { useState } from "react";
-import { useNavigate, Link } from "react-router-dom";
+import React, { useState, useEffect } from "react";
+import { useGlobalError } from "@/hooks/use-global-error";
+import { useNavigate, Link, useLocation } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
-import { Coffee, Mail, Lock, AlertCircle, Loader2, Eye, EyeOff } from "lucide-react";
+import { Coffee, Mail, Lock, AlertCircle, Loader2, Eye, EyeOff, CheckCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -9,12 +10,27 @@ import { Label } from "@/components/ui/label";
 
 const LoginPage = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { login } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
+  const { showError } = useGlobalError();
+  const [signupSuccess, setSignupSuccess] = useState(false);
+
+  useEffect(() => {
+    // Check if coming from signup
+    const state = location.state as any;
+    if (state?.signupSuccess) {
+      setSignupSuccess(true);
+      setEmail(state?.email || "");
+      // Clear the success message after 5 seconds
+      const timer = setTimeout(() => setSignupSuccess(false), 5000);
+      return () => clearTimeout(timer);
+    }
+  }, [location]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -26,6 +42,7 @@ const LoginPage = () => {
       navigate("/");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Login failed. Please try again.");
+      showError(err);
     } finally {
       setIsLoading(false);
     }
@@ -51,6 +68,14 @@ const LoginPage = () => {
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-4">
+              {/* Success Alert */}
+              {signupSuccess && (
+                <div className="flex items-center gap-3 p-3 rounded-lg bg-green-50 text-green-700 border border-green-200 animate-slide-down">
+                  <CheckCircle className="h-4 w-4 flex-shrink-0" />
+                  <p className="text-sm font-medium">Account created! Please sign in to continue.</p>
+                </div>
+              )}
+
               {/* Error Alert */}
               {error && (
                 <div className="flex items-center gap-3 p-3 rounded-lg bg-destructive/10 text-destructive animate-shake">

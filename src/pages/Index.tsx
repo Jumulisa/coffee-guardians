@@ -79,6 +79,7 @@ const Index = () => {
               <div className="text-sm text-primary-foreground/80">Support Available</div>
             </div>
           </div>
+
         </div>
       </section>
 
@@ -149,6 +150,32 @@ const Index = () => {
                 <p className="text-sm text-muted-foreground">{feature.desc}</p>
               </div>
             ))}
+          </div>
+        </div>
+      </section>
+
+      {/* API Endpoints Section */}
+      <section className="px-4 py-16 bg-white border-t border-gray-100">
+        <div className="container mx-auto max-w-2xl">
+          <h2 className="mb-4 text-2xl font-bold text-foreground text-center">Model API Endpoints</h2>
+          <p className="mb-8 text-muted-foreground text-center">
+            The following endpoints are available for the Coffee Disease Detection model API:
+          </p>
+          <div className="bg-gray-50 rounded-lg p-6 shadow-sm">
+            <ul className="space-y-4">
+              <li>
+                <span className="font-mono font-semibold text-primary">POST /predict</span>
+                <div className="text-sm text-muted-foreground">Upload a coffee leaf image to receive a disease prediction and severity assessment.</div>
+              </li>
+              <li>
+                <span className="font-mono font-semibold text-primary">GET /health</span>
+                <div className="text-sm text-muted-foreground">Check the health/status of the model API server.</div>
+              </li>
+              <li>
+                <span className="font-mono font-semibold text-primary">GET /version</span>
+                <div className="text-sm text-muted-foreground">Get the current version of the deployed model.</div>
+              </li>
+            </ul>
           </div>
         </div>
       </section>
